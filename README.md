@@ -15,13 +15,14 @@ code for ***Convolutional Hierarchical Attention Network for Query-Focused Video
 
 ## Run
 
-modify config/config.py for config
+extract resent and c3d feature of 4 videos mentioned in paper and put them in ./data/features folder with h5 format
+
+`python ./data/preprocess.py`
+
+`python ./data/query_feature.py`
+
+modify config/config.py for experimental setting
 
 `python main.py`
-
-
-
-
-
 
 

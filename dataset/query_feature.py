@@ -17,21 +17,21 @@ def prepend_line(infile,outfile,line):
 
 def load(filename):
     num_lines=getFileLineNums(filename)
-    gensim_file='../../data/query_feature/glove_model.txt'
+    gensim_file='../data/query_feature/glove_model.txt'
     gensim_first_line="{} {}".format(num_lines,300)
 
     prepend_line(filename,gensim_file,gensim_first_line)
 
     gensim.models.KeyedVectors.load_word2vec_format(gensim_file)
 
-load('../../data/query_feature/glove.840B.300d.txt')
+load('../data/query_feature/glove.840B.300d.txt')
 
 
-model=gensim.models.KeyedVectors.load_word2vec_format('../../data/query_feature/glove_model.txt')
+model=gensim.models.KeyedVectors.load_word2vec_format('../data/query_feature/glove_model.txt')
 
 dictionary={}
 
-with open("../../data/origin_data/Dense_per_shot_tags/Dictionary.txt",'r') as f:
+with open("../data/origin_data/Dense_per_shot_tags/Dictionary.txt",'r') as f:
     for line in f:
         word=line.strip()[1:-1]
         if word not in model:
@@ -45,6 +45,6 @@ with open("../../data/origin_data/Dense_per_shot_tags/Dictionary.txt",'r') as f:
             dictionary[word]=model[word]
 
 
-f=open("../../data/query_feature/query_dictionary.pkl",'wb')
+f=open("../data/query_feature/query_dictionary.pkl",'wb')
 pickle.dump(dictionary,f)
 

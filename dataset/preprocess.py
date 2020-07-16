@@ -7,7 +7,7 @@ from config.config import DefaultConfig as config
 for kind in ["C3D","resnet_avg"]:
     print(kind)
     for video_id in ["V1","V2","V3","V4"]:
-        f=h5py.File('../../data/features/'+video_id+'_'+kind+'.h5','r')
+        f=h5py.File('../data/features/'+video_id+'_'+kind+'.h5','r')
         feature=f['feature'][()]
         frame_num=feature.shape[0]
         print(frame_num)
@@ -50,7 +50,7 @@ for kind in ["C3D","resnet_avg"]:
                 # features[seg_index,frame_index]=F.avg_pool1d(t.tensor(feature[frame]).unsqueeze(0).unsqueeze(0),kernel_size=2,stride=2)
 
 
-        f=h5py.File('../../data/riple_data/'+video_id+'_'+kind+'.h5','w')
+        f=h5py.File('../data/ripe_data/'+video_id+'_'+kind+'.h5','w')
         f.create_dataset('features', data=features)
         f.create_dataset('seg_len', data=seg_len)
 

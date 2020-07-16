@@ -82,19 +82,19 @@ class Trainer():
         p=0
         r=0
 
-        with open("../../data/query_feature/query_dictionary.pkl","rb") as f:
+        with open("../data/query_feature/query_dictionary.pkl","rb") as f:
             embedding=pickle.load(f)
 
         evaluation_num=0
 
-        for _,_,files in os.walk("../../data/origin_data/Query-Focused_Summaries/Oracle_Summaries/P0"+str(video_id)):
+        for _,_,files in os.walk("../data/origin_data/Query-Focused_Summaries/Oracle_Summaries/P0"+str(video_id)):
             evaluation_num=len(files)
             for file in files:
                 summaries_GT=[]
-                with open("../../data/origin_data/Query-Focused_Summaries/Oracle_Summaries/P0"+str(video_id)+"/"+file,"r") as f:
+                with open("../data/origin_data/Query-Focused_Summaries/Oracle_Summaries/P0"+str(video_id)+"/"+file,"r") as f:
                     for line in f.readlines():
                         summaries_GT.append(int(line.strip()))
-                f=h5py.File('../../data/riple_data/V'+str(video_id)+'_resnet_avg.h5','r')
+                f=h5py.File('../data/riple_data/V'+str(video_id)+'_resnet_avg.h5','r')
                 features=t.tensor(f['features'][()]).unsqueeze(0).cuda()
                 seg_len=t.tensor(f['seg_len'][()]).unsqueeze(0).cuda()
 

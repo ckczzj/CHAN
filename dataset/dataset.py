@@ -9,15 +9,15 @@ class UCTDataset(Dataset):
     def __init__(self,videos_id):
         self.dataset=[]
         for video_id in videos_id:
-            for _ , _, files in os.walk("../../data/origin_data/Query-Focused_Summaries/Oracle_Summaries/P0"+str(video_id)):
+            for _ , _, files in os.walk("../data/origin_data/Query-Focused_Summaries/Oracle_Summaries/P0"+str(video_id)):
                 for file in files:
                     self.dataset.append(file[:file.find("_oracle.txt")]+"_"+str(video_id))
-        with open("../../data/query_feature/query_dictionary.pkl","rb") as f:
+        with open("../data/query_feature/query_dictionary.pkl","rb") as f:
             self.embedding=pickle.load(f)
 
     def __getitem__(self,index):
         video_id=self.dataset[index].split('_')[2]
-        f=h5py.File('../../data/riple_data/V'+video_id+'_resnet_avg.h5','r')
+        f=h5py.File('../data/ripe_data/V'+video_id+'_resnet_avg.h5','r')
         features=f['features'][()]
         seg_len=f['seg_len'][()]
 
@@ -29,7 +29,7 @@ class UCTDataset(Dataset):
 
         concept1_GT=t.zeros(config.MAX_SEGMENT_NUM*config.MAX_FRAME_NUM)
         concept2_GT=t.zeros(config.MAX_SEGMENT_NUM*config.MAX_FRAME_NUM)
-        with open("../../data/origin_data/Dense_per_shot_tags/P0"+video_id+"/P0"+video_id+".txt","r") as f:
+        with open("../data/origin_data/Dense_per_shot_tags/P0"+video_id+"/P0"+video_id+".txt","r") as f:
             lines=f.readlines()
             for index,line in enumerate(lines):
                 concepts=line.strip().split(',')
