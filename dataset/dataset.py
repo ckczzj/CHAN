@@ -1,23 +1,22 @@
-from torch.utils.data.dataset import Dataset
 import os
 import h5py
-import pickle
-import torch as t
-from config.config import DefaultConfig as config
+import torch
+from torch.utils.data.dataset import Dataset
+from utils import load_pickle
 
 class UCTDataset(Dataset):
-    def __init__(self,videos_id):
+    def __init__(self,config):
+        self.config=config
         self.dataset=[]
-        for video_id in videos_id:
-            for _ , _, files in os.walk("../data/origin_data/Query-Focused_Summaries/Oracle_Summaries/P0"+str(video_id)):
+        for video_id in self.config["train_videos"]:
+            for _ , _, files in os.walk("./data/origin_data/Query-Focused_Summaries/Oracle_Summaries/P0"+str(video_id)):
                 for file in files:
                     self.dataset.append(file[:file.find("_oracle.txt")]+"_"+str(video_id))
-        with open("../data/query_feature/query_dictionary.pkl","rb") as f:
-            self.embedding=pickle.load(f)
+        self.embedding=load_pickle("./data/processed/query_dictionary.pkl")
 
     def __getitem__(self,index):
         video_id=self.dataset[index].split('_')[2]
-        f=h5py.File('../data/ripe_data/V'+video_id+'_resnet_avg.h5','r')
+        f=h5py.File('./data/processed/V'+video_id+'_resnet_avg.h5','r')
         features=f['features'][()]
         seg_len=f['seg_len'][()]
 
@@ -27,9 +26,9 @@ class UCTDataset(Dataset):
 
         concept1,concept2=self.dataset[index].split('_')[0:2]
 
-        concept1_GT=t.zeros(config.MAX_SEGMENT_NUM*config.MAX_FRAME_NUM)
-        concept2_GT=t.zeros(config.MAX_SEGMENT_NUM*config.MAX_FRAME_NUM)
-        with open("../data/origin_data/Dense_per_shot_tags/P0"+video_id+"/P0"+video_id+".txt","r") as f:
+        concept1_GT=torch.zeros(self.config["max_segment_num"]*self.config["max_frame_num"])
+        concept2_GT=torch.zeros(self.config["max_segment_num"]*self.config["max_frame_num"])
+        with open("./data/origin_data/Dense_per_shot_tags/P0"+video_id+"/P0"+video_id+".txt","r") as f:
             lines=f.readlines()
             for index,line in enumerate(lines):
                 concepts=line.strip().split(',')
@@ -39,7 +38,7 @@ class UCTDataset(Dataset):
                     concept2_GT[index]=1
 
         shot_num=seg_len.sum()
-        mask_GT=t.zeros(config.MAX_SEGMENT_NUM*config.MAX_FRAME_NUM,dtype=t.uint8)
+        mask_GT=torch.zeros(self.config["max_segment_num"]*self.config["max_frame_num"],dtype=torch.bool)
         for i in range(shot_num):
             mask_GT[i]=1
 
@@ -54,12 +53,3 @@ class UCTDataset(Dataset):
 
     def __len__(self):
         return len(self.dataset)
-
-# if __name__=="__main__":
-    # train_dataloader=DataLoader(UCTDataset([4]),batch_size=1,shuffle=True,num_workers=5)
-    #
-    # for f,sn,sl,q1,q2,c1,c2 in train_dataloader:
-    #     # print(f,sn,sl,q1,q2)
-    #     # print(f.shape,sn.shape,sl.shape,q1.shape,q2.shape)
-    #     print(sl.shape)
-    #     break

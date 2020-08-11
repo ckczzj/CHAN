@@ -7,22 +7,17 @@ code for ***Convolutional Hierarchical Attention Network for Query-Focused Video
 
 ## Prerequisites
 
-- Python3
-- PyTorch 1.5+
+- Python 3.5
+- PyTorch 1.4.0
 - matlab.engine (Install MATLAB Engine API for Python [here](https://www.mathworks.com/help/matlab/matlab_external/install-the-matlab-engine-for-python.html))
+- gensim
+- h5py
 
 
 
 ## Run
 
-extract resent and c3d feature of 4 videos mentioned in paper and put them in ./data/features folder with h5 format
-
-`python ./data/preprocess.py`
-
-`python ./data/query_feature.py`
-
-modify config/config.py for experimental setting
-
-`python main.py`
-
-
+1. download and unzip [glove.840B.300d.zip](http://nlp.stanford.edu/data/glove.840B.300d.zip) and place it at ./data/glove.bin
+2. download and unzip [UTC_feature.zip](https://drive.google.com/file/d/1np6d59s27PASZK7yjdnnvkmqT1cPeotO/view?usp=sharing) and place it at ./data/
+3. (optional) modify json file in config folder for experimental setting
+4. `python main.py`

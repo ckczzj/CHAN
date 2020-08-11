@@ -1,42 +1,26 @@
-# coding: utf-8
-
 import math
-import torch as t
-from torch import nn
-import torch.nn.functional as F
-from config.config import DefaultConfig as config
+import torch
+import torch.nn as nn
+from .attention import Attention
 
-INFINITY=1e15
-
-class Attention(nn.Module):
-    def __init__(self,Q_in_features_dim,K_in_features_dim,attention_dim):
-        nn.Module.__init__(self)
-        self.linear1=nn.Linear(Q_in_features_dim,attention_dim,bias=False)
-        self.linear2=nn.Linear(K_in_features_dim,attention_dim,bias=False)
-        self.linear3=nn.Linear(attention_dim,1,bias=False)
-
-    def forward(self,Q,K,mask):
-        attention_score=self.linear3(t.tanh(self.linear1(Q)+self.linear2(K))).squeeze(-1)
-        attention_score=attention_score.masked_fill(mask==0,-INFINITY)
-        attention_score=F.softmax(attention_score,dim=-1)
-        return attention_score
 
 class CHAN(nn.Module):
-    def __init__(self):
+    def __init__(self,config):
         nn.Module.__init__(self)
+        self.config=config
 
-        self.conv1d_1=nn.Conv1d(config.IN_CHANNEL,config.conv1_channel,kernel_size=5,stride=1,padding=2)
+        self.conv1d_1=nn.Conv1d(self.config["in_channel"],self.config["conv1_channel"],kernel_size=5,stride=1,padding=2)
         self.max_pooling_1=nn.MaxPool1d(2,stride=2,padding=0)
-        self.conv1d_2=nn.Conv1d(config.conv1_channel,config.conv2_channel,kernel_size=5,stride=1,padding=2)
+        self.conv1d_2=nn.Conv1d(self.config["conv1_channel"],self.config["conv2_channel"],kernel_size=5,stride=1,padding=2)
         self.max_pooling_2=nn.MaxPool1d(2,stride=2,padding=0)
-        self.self_attention=Attention(config.conv2_channel,config.conv2_channel,config.conv2_channel)
-        self.concept_attention=Attention(config.CONCEPT_DIM,config.conv2_channel,config.conv2_channel)
-        self.transpose_conv1d_1=t.nn.ConvTranspose1d(4*config.conv2_channel,config.deconv1_channel,kernel_size=4,stride=2,padding=1)
-        self.transpose_conv1d_2=t.nn.ConvTranspose1d(config.deconv1_channel,config.deconv2_channel,kernel_size=4,stride=2,padding=1)
-        self.similarity_linear1=t.nn.Linear(config.deconv2_channel,config.SIMILARITY_DIM,bias=False)
-        self.similarity_linear2=t.nn.Linear(config.CONCEPT_DIM,config.SIMILARITY_DIM,bias=False)
+        self.self_attention=Attention(self.config["conv2_channel"],self.config["conv2_channel"],self.config["conv2_channel"])
+        self.concept_attention=Attention(self.config["concept_dim"],self.config["conv2_channel"],self.config["conv2_channel"])
+        self.transpose_conv1d_1=torch.nn.ConvTranspose1d(4*self.config["conv2_channel"],self.config["deconv1_channel"],kernel_size=4,stride=2,padding=1)
+        self.transpose_conv1d_2=torch.nn.ConvTranspose1d(self.config["deconv1_channel"],self.config["deconv2_channel"],kernel_size=4,stride=2,padding=1)
+        self.similarity_linear1=torch.nn.Linear(self.config["deconv2_channel"],self.config["similarity_dim"],bias=False)
+        self.similarity_linear2=torch.nn.Linear(self.config["concept_dim"],self.config["similarity_dim"],bias=False)
 
-        self.MLP=t.nn.Linear(config.SIMILARITY_DIM,1)
+        self.MLP=torch.nn.Linear(self.config["similarity_dim"],1)
 
     # batch tensor: batch_size * max_seg_num * max_seg_length * 2048/4096
     # seg_len list(list(int)) : batch_size * seg_num (num of frame)
@@ -58,10 +42,10 @@ class CHAN(nn.Module):
         tmp2=self.max_pooling_2(tmp2).transpose(1,2)
 
         # batch_size * max_seg_num * max_seg_length/4
-        attention_mask=t.zeros(batch_size,max_seg_num,int(max_seg_length/4),dtype=t.uint8).cuda()
+        attention_mask=torch.zeros(batch_size,max_seg_num,int(max_seg_length/4),dtype=torch.bool).cuda()
         for i in range(batch_size):
             for j in range(len(seg_len[i])):
-                for k in range(math.ceil(seg_len[i][j]/4)):
+                for k in range(math.ceil(seg_len[i][j]/4.0)):
                     attention_mask[i][j][k]=1
 
         # (batch_size * max_seg_num) * max_seg_length/4 * max_seg_length/4
@@ -82,8 +66,8 @@ class CHAN(nn.Module):
         self_attention_result=self_attention_result.sum(-2)
 
         # (batch_size * max_seg_num) * max_seg_length/4 * max_seg_length/4
-        concept1_attention_score=self.concept_attention(concept1.unsqueeze(1).unsqueeze(1).unsqueeze(1).expand(batch_size,max_seg_num,int(config.MAX_FRAME_NUM/4),1,config.CONCEPT_DIM).contiguous().view(batch_size*max_seg_num,int(config.MAX_FRAME_NUM/4),1,config.CONCEPT_DIM),K,attention_mask)
-        concept2_attention_score=self.concept_attention(concept2.unsqueeze(1).unsqueeze(1).unsqueeze(1).expand(batch_size,max_seg_num,int(config.MAX_FRAME_NUM/4),1,config.CONCEPT_DIM).contiguous().view(batch_size*max_seg_num,int(config.MAX_FRAME_NUM/4),1,config.CONCEPT_DIM),K,attention_mask)
+        concept1_attention_score=self.concept_attention(concept1.unsqueeze(1).unsqueeze(1).unsqueeze(1).expand(batch_size,max_seg_num,int(self.config["max_frame_num"]/4),1,self.config["concept_dim"]).contiguous().view(batch_size*max_seg_num,int(self.config["max_frame_num"]/4),1,self.config["concept_dim"]),K,attention_mask)
+        concept2_attention_score=self.concept_attention(concept2.unsqueeze(1).unsqueeze(1).unsqueeze(1).expand(batch_size,max_seg_num,int(self.config["max_frame_num"]/4),1,self.config["concept_dim"]).contiguous().view(batch_size*max_seg_num,int(self.config["max_frame_num"]/4),1,self.config["concept_dim"]),K,attention_mask)
 
         # (batch_size * max_seg_num) * max_seg_length/4 * max_seg_length/4 * 256
         concept1_attention_result=concept1_attention_score.unsqueeze(-1)*K
@@ -97,7 +81,7 @@ class CHAN(nn.Module):
         concept2_attention_result=concept2_attention_result.sum(-2)
 
         # (batch_size * max_seg_num) * max_seg_length/4 * 1024
-        attention_result=t.cat((tmp2,self_attention_result,concept1_attention_result,concept2_attention_result),dim=-1)
+        attention_result=torch.cat((tmp2,self_attention_result,concept1_attention_result,concept2_attention_result),dim=-1)
 
         # (batch_size * max_seg_num) * 200 * max_seg_length/2
         result=self.transpose_conv1d_1(attention_result.transpose(1,2))
@@ -120,8 +104,8 @@ class CHAN(nn.Module):
         concept2_score=self.MLP(concept2_similar)
 
         # batch_size * (max_seg_num * max_seg_length) * 1
-        concept1_score=t.sigmoid(concept1_score)
-        concept2_score=t.sigmoid(concept2_score)
+        concept1_score=torch.sigmoid(concept1_score)
+        concept2_score=torch.sigmoid(concept2_score)
 
         # batch_size * max_seg_num * max_seg_length
         concept1_score=concept1_score.squeeze(-1).view(batch_size,max_seg_num,max_seg_length)
