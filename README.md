@@ -1,4 +1,4 @@
-# Convolutional Hierarchical Attention Network for Query-Focused Video Summarization
+# Convolutional Hierarchical Attention Network for Query-Focused Video Summarization (CHAN)
 code for ***Convolutional Hierarchical Attention Network for Query-Focused Video Summarization***，which is accepted by AAAI 2020 conference.
 
 [arXiv](https://arxiv.org/abs/2002.03740)  [paper](https://doi.org/10.1609/aaai.v34i07.6929) 
